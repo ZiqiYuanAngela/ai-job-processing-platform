@@ -34,14 +34,30 @@ function App() {
   }
 
   useEffect(() => {
-    refreshJobs();
+    let cancelled = false;
+
+    async function loadJobs() {
+      try {
+        const data = await listJobs();
+        if (!cancelled) {
+          setJobs(data);
+        }
+      } catch {
+        if (!cancelled) {
+          setError("Unable to load jobs.");
+        }
+      }
+    }
+
+    loadJobs();
 
     const intervalId = window.setInterval(
-      refreshJobs,
+      loadJobs,
       2000,
     );
 
     return () => {
+      cancelled = true;
       window.clearInterval(intervalId);
     };
   }, []);
