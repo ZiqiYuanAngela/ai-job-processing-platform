@@ -1,3 +1,14 @@
+from fastapi import Depends
+from redis import Redis
+from sqlalchemy.orm import Session
+from sqlalchemy import text
+
+from app.config import settings
+from app.database import get_db
+
+from app.logging_config import configure_logging
+configure_logging()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -27,7 +38,19 @@ app.include_router(jobs_router)
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
+def health(
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    db.execute(text("SELECT 1"))
+
+    redis_client = Redis.from_url(
+        settings.redis_url
+    )
+
+    redis_client.ping()
+
     return {
         "status": "healthy",
+        "database": "connected",
+        "queue": "connected",
     }

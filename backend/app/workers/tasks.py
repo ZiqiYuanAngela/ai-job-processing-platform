@@ -13,6 +13,10 @@ from app.services.workflow_service import (
 )
 from app.workers.celery_app import celery_app
 
+import logging
+
+from app.schemas import job
+logger = logging.getLogger(__name__)
 
 RETRYABLE_EXCEPTIONS = (
     TimeoutError,
@@ -32,6 +36,12 @@ def execute_job(
     db = SessionLocal()
 
     try:
+        logger.info("Starting job job_id=%s attempt=%s", job_id, job.attempt_count)
+        logger.info(
+    "Job completed job_id=%s cost=%s",
+    job.id,
+    job.estimated_cost_usd,
+)
         job = get_job(db, job_id)
 
         if job is None:
@@ -60,6 +70,10 @@ def execute_job(
 
     except RETRYABLE_EXCEPTIONS as exc:
         job = get_job(db, job_id)
+        logger.exception(
+    "Job failed job_id=%s",
+    job_id,
+)
 
         if job is not None:
             job.error_message = str(exc)
